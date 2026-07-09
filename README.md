@@ -180,6 +180,8 @@ Genera el jar autocontenido del demo para ejecutar los `main` desde la linea de 
 mvn -Pdemo-executable -pl notifications-demo -am package
 ```
 
+Este perfil compila tambien el modulo `notifications-observability-otel`, porque el demo lo incluye dentro del jar final.
+
 El artefacto ejecutable queda en:
 
 ```bash
@@ -445,7 +447,7 @@ Si necesitas integraciones productivas, reemplaza esas clases por adaptadores qu
 
 ## 8. Uso con Docker
 
-El `Dockerfile` del repositorio construye el modulo `notifications-demo`, activa el perfil `demo-executable` y empaqueta el jar ejecutable en una imagen ligera. El contenedor usa `NotificationOptimizedMain` por defecto, pero puedes cambiar el `MAIN_CLASS` para ejecutar otro flujo, incluido el de observabilidad.
+El `Dockerfile` del repositorio construye el modulo `notifications-demo`, activa el perfil `demo-executable` y empaqueta el jar ejecutable en una imagen ligera. El contenedor usa `NotificationOptimizedMain` por defecto, pero puedes cambiar el `MAIN_CLASS` para ejecutar otro flujo, incluido el de observabilidad. No necesitas compilar antes en tu maquina, porque la imagen ya hace el `mvn -pl notifications-demo -am -Pdemo-executable -DskipTests package` internamente.
 
 Construir la imagen:
 

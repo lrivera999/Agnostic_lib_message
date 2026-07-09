@@ -8,6 +8,7 @@ COPY pom.xml .
 COPY notifications-core/pom.xml notifications-core/pom.xml
 COPY notifications-application/pom.xml notifications-application/pom.xml
 COPY notifications-adapters/pom.xml notifications-adapters/pom.xml
+COPY notifications-observability-otel/pom.xml notifications-observability-otel/pom.xml
 COPY notifications-demo/pom.xml notifications-demo/pom.xml
 
 # Source tree used by the shared-module layout.
