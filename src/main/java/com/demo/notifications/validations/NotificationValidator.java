@@ -2,23 +2,17 @@ package com.demo.notifications.validations;
 
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.demo.notifications.core.NotificationRequest;
 import com.demo.notifications.core.enums.MessageChannel;
 import com.demo.notifications.core.exceptions.NotificationException;
 
-public class NotificationValidator {
-    
-    private static Logger logger = LoggerFactory.getLogger(NotificationValidator.class);
-    
-    static final String PROVIDER_NAME = "Twilio";
+public final class NotificationValidator {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+?[0-9]{8,15}$");
     
-    private NotificationValidator() {}
+    private NotificationValidator() {
+    }
 
     public static void validate(NotificationRequest request) {
         if (request == null) {
@@ -77,7 +71,4 @@ public class NotificationValidator {
             throw new NotificationException(MessageChannel.MSG_BLANK_TITLE);
         }
     }
-
-
-
 }

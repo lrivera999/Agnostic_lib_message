@@ -13,11 +13,13 @@ COPY notifications-demo/pom.xml notifications-demo/pom.xml
 # Source tree used by the shared-module layout.
 COPY src src
 
-RUN mvn -pl notifications-demo -am -DskipTests package
+RUN mvn -pl notifications-demo -am -Pdemo-executable -DskipTests package
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 COPY --from=build /workspace/notifications-demo/target/notifications-demo-1.0.0.jar /app/notifications-demo.jar
 
-ENTRYPOINT ["java", "-jar", "/app/notifications-demo.jar"]
+ENV MAIN_CLASS=com.demo.notifications.examples.NotificationOptimizedMain
+
+ENTRYPOINT ["sh", "-c", "exec java ${JAVA_OPTS} -cp /app/notifications-demo.jar ${MAIN_CLASS:-com.demo.notifications.examples.NotificationOptimizedMain} \"$@\"", "--"]

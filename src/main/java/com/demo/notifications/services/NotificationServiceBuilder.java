@@ -10,21 +10,19 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.demo.notifications.core.enums.MessageChannel;
 import com.demo.notifications.core.enums.NotificationChannel;
 import com.demo.notifications.core.exceptions.NotificationException;
 import com.demo.notifications.core.interfaces.NotificationSender;
+import com.demo.notifications.observability.NotificationTelemetryPort;
 
-public class NotificationServiceBuilder {
-
-    private static final Logger logger = LoggerFactory.getLogger(NotificationServiceBuilder.class);
+public final class NotificationServiceBuilder {
+    private static final String MSG_TELEMETRY_NULL = "La telemetria proporcionada no puede ser nula \t";
 
     private final Map<NotificationChannel, LinkedHashMap<String, NotificationSender>> senders = new EnumMap<>(NotificationChannel.class);
     private final Map<NotificationChannel, String> activeProviders = new EnumMap<>(NotificationChannel.class);
     private final Map<NotificationChannel, List<String>> fallbackProviders = new EnumMap<>(NotificationChannel.class);
+    private NotificationTelemetryPort telemetry = NotificationTelemetryPort.noop();
 
     private Executor executor = Executors.newVirtualThreadPerTaskExecutor();
 
@@ -99,6 +97,14 @@ public class NotificationServiceBuilder {
         return this;
     }
 
+    public NotificationServiceBuilder telemetry(NotificationTelemetryPort telemetry) {
+        if (telemetry == null) {
+            throw new NotificationException(MSG_TELEMETRY_NULL);
+        }
+        this.telemetry = telemetry;
+        return this;
+    }
+
     public NotificationService build() {
         if (senders.isEmpty()) {
             throw new NotificationException(MessageChannel.MSG_SENDER_REGISTRED);
@@ -115,7 +121,8 @@ public class NotificationServiceBuilder {
             immutableSenders,
             new HashMap<>(activeProviders),
             new HashMap<>(fallbackProviders),
-            executor);
+            executor,
+            telemetry);
     }
 
     private void validateProviderPolicies() {

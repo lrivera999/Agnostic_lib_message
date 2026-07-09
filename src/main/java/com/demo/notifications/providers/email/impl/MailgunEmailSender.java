@@ -9,14 +9,13 @@ import com.demo.notifications.core.enums.NotificationChannel;
 import com.demo.notifications.core.exceptions.NotificationException;
 import com.demo.notifications.core.interfaces.NotificationSender;
 
-public class MailgunEmailSender implements NotificationSender 
-{
-    private static Logger logger = LoggerFactory.getLogger(MailgunEmailSender.class);
+public final class MailgunEmailSender implements NotificationSender {
+    private static final Logger logger = LoggerFactory.getLogger(MailgunEmailSender.class);
     private final String apiKey;
     private final String domain;
     private final String from;
 
-    static final String PROVIDER_NAME = "Mailgun";
+    private static final String PROVIDER_NAME = "Mailgun";
 
     public MailgunEmailSender(String apiKey, String domain, String from) {
         this.apiKey = apiKey;
@@ -25,10 +24,14 @@ public class MailgunEmailSender implements NotificationSender
     }
 
     @Override
-    public NotificationChannel channel(){ return NotificationChannel.EMAIL; }
+    public NotificationChannel channel() {
+        return NotificationChannel.EMAIL;
+    }
 
     @Override
-    public String provider(){ return PROVIDER_NAME; }
+    public String provider() {
+        return PROVIDER_NAME;
+    }
 
     @Override
     public NotificationResult send(NotificationRequest request) throws NotificationException {
@@ -41,5 +44,4 @@ public class MailgunEmailSender implements NotificationSender
             request.message());
         return NotificationResult.success(channel(), provider());
     }
-
 }

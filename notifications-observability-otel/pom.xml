@@ -10,9 +10,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>notifications-adapters</artifactId>
-    <name>Notifications Adapters</name>
-    <description>Outbound adapters for notification channels</description>
+    <artifactId>notifications-observability-otel</artifactId>
+    <name>Notifications Observability OTel</name>
+    <description>OpenTelemetry adapter for the notifications library</description>
 
     <properties>
         <shared.main.source>${maven.multiModuleProjectDirectory}/src/main/java</shared.main.source>
@@ -23,20 +23,12 @@
     <dependencies>
         <dependency>
             <groupId>com.demo</groupId>
-            <artifactId>notifications-core</artifactId>
+            <artifactId>notifications-application</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j2-impl</artifactId>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -55,10 +47,10 @@
                 <configuration>
                     <release>${maven.compiler.release}</release>
                     <includes>
-                        <include>com/demo/notifications/providers/**</include>
+                        <include>com/demo/notifications/observability/otel/**</include>
                     </includes>
                     <testIncludes>
-                        <testInclude>com/demo/notifications/providers/**</testInclude>
+                        <testInclude>com/demo/notifications/observability/otel/**</testInclude>
                     </testIncludes>
                 </configuration>
             </plugin>

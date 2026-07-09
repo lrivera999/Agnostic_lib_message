@@ -43,6 +43,14 @@ class NotificationServiceBuilderTest {
     }
 
     @Test
+    void nullTelemetryIsRejected() {
+        NotificationException ex = assertThrows(NotificationException.class,
+            () -> new NotificationServiceBuilder().telemetry(null));
+
+        assertEquals("La telemetria proporcionada no puede ser nula \t", ex.getMessage());
+    }
+
+    @Test
     void buildCreatesServiceWhenSenderIsRegistered() {
         NotificationService service = new NotificationServiceBuilder()
             .executor(Runnable::run)

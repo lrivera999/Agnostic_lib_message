@@ -15,8 +15,9 @@
     <description>Core domain and ports for the notifications library</description>
 
     <properties>
-        <shared.main.source>${project.parent.basedir}/src/main/java</shared.main.source>
-        <shared.test.source>${project.parent.basedir}/src/test/java</shared.test.source>
+        <shared.main.source>${maven.multiModuleProjectDirectory}/src/main/java</shared.main.source>
+        <shared.test.source>${maven.multiModuleProjectDirectory}/src/test/java</shared.test.source>
+        <jacoco.skip>false</jacoco.skip>
     </properties>
 
     <dependencies>

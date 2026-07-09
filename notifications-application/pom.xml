@@ -15,8 +15,9 @@
     <description>Application services for the notifications library</description>
 
     <properties>
-        <shared.main.source>${project.parent.basedir}/src/main/java</shared.main.source>
-        <shared.test.source>${project.parent.basedir}/src/test/java</shared.test.source>
+        <shared.main.source>${maven.multiModuleProjectDirectory}/src/main/java</shared.main.source>
+        <shared.test.source>${maven.multiModuleProjectDirectory}/src/test/java</shared.test.source>
+        <jacoco.skip>false</jacoco.skip>
     </properties>
 
     <dependencies>
@@ -56,10 +57,12 @@
                     <includes>
                         <include>com/demo/notifications/services/**</include>
                         <include>com/demo/notifications/validations/**</include>
+                        <include>com/demo/notifications/observability/*.java</include>
                     </includes>
                     <testIncludes>
                         <testInclude>com/demo/notifications/services/**</testInclude>
                         <testInclude>com/demo/notifications/validations/**</testInclude>
+                        <testInclude>com/demo/notifications/observability/*.java</testInclude>
                     </testIncludes>
                 </configuration>
             </plugin>

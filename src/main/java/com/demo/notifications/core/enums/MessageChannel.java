@@ -1,6 +1,10 @@
 package com.demo.notifications.core.enums;
 
-public class MessageChannel {
+public final class MessageChannel {
+
+   private MessageChannel() {
+   }
+
    public static final String MSG_SUCCESS = "Notificación enviada correctamente \t";
    public static final String MSG_ERROR = "Error al enviar la notificación \t";
    public static final String MSG_REQUEST_NULL = "La solicitud de notificación no puede ser nula o vacía \t";

@@ -9,13 +9,12 @@ import com.demo.notifications.core.enums.NotificationChannel;
 import com.demo.notifications.core.exceptions.NotificationException;
 import com.demo.notifications.core.interfaces.NotificationSender;
 
-public class FirebasePushSender implements NotificationSender 
-{
-    private static Logger logger = LoggerFactory.getLogger(FirebasePushSender.class);
+public final class FirebasePushSender implements NotificationSender {
+    private static final Logger logger = LoggerFactory.getLogger(FirebasePushSender.class);
     private final String apiKey;
     private final String projectId;
     private final String serviceAccount;
-    static final String PROVIDER_NAME = "Firebase";
+    private static final String PROVIDER_NAME = "Firebase";
 
     public FirebasePushSender(String apiKey, String projectId, String serviceAccount) {
         this.apiKey = apiKey;
@@ -24,10 +23,14 @@ public class FirebasePushSender implements NotificationSender
     }
 
     @Override
-    public NotificationChannel channel(){ return NotificationChannel.PUSH; }
+    public NotificationChannel channel() {
+        return NotificationChannel.PUSH;
+    }
 
     @Override
-    public String provider(){ return PROVIDER_NAME; }
+    public String provider() {
+        return PROVIDER_NAME;
+    }
 
     @Override
     public NotificationResult send(NotificationRequest request) throws NotificationException {
@@ -39,5 +42,4 @@ public class FirebasePushSender implements NotificationSender
             request.message());
         return NotificationResult.success(channel(), provider());
     }
-    
 }

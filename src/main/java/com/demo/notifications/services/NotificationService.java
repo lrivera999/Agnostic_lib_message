@@ -7,10 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.demo.notifications.core.NotificationRequest;
 import com.demo.notifications.core.NotificationResult;
@@ -18,23 +16,25 @@ import com.demo.notifications.core.enums.MessageChannel;
 import com.demo.notifications.core.enums.NotificationChannel;
 import com.demo.notifications.core.exceptions.NotificationException;
 import com.demo.notifications.core.interfaces.NotificationSender;
+import com.demo.notifications.observability.NotificationTelemetryObservation;
+import com.demo.notifications.observability.NotificationTelemetryPort;
+import com.demo.notifications.observability.NotificationTelemetryScope;
 import com.demo.notifications.validations.NotificationValidator;
 
-public class NotificationService {
-
-    private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
+public final class NotificationService {
 
     private final Map<NotificationChannel, Map<String, NotificationSender>> sendersByChannel;
     private final Map<NotificationChannel, String> activeProviders;
     private final Map<NotificationChannel, List<String>> fallbackProviders;
     private final Executor executor;
+    private final NotificationTelemetryPort telemetry;
 
-    @SuppressWarnings("unused")
     NotificationService(
         Map<NotificationChannel, Map<String, NotificationSender>> sendersByChannel,
         Map<NotificationChannel, String> activeProviders,
         Map<NotificationChannel, List<String>> fallbackProviders,
-        Executor executor) {
+        Executor executor,
+        NotificationTelemetryPort telemetry) {
         this.sendersByChannel = sendersByChannel.entrySet().stream()
             .collect(Collectors.toUnmodifiableMap(
                 Map.Entry::getKey,
@@ -45,16 +45,36 @@ public class NotificationService {
                 Map.Entry::getKey,
                 entry -> List.copyOf(entry.getValue())));
         this.executor = executor;
+        this.telemetry = telemetry;
     }
 
     public NotificationResult send(NotificationRequest request) {
-        NotificationValidator.validate(request);
+        NotificationTelemetryScope scope = telemetry.start(observationFor(request, false, false, 0, null));
+        try {
+            NotificationValidator.validate(request);
 
-        return sendWithCandidates(request, resolveSenders(request.channel()));
+            List<NotificationSender> candidates = resolveSenders(request.channel());
+            scope.attribute("notifications.candidate.count", Integer.toString(candidates.size()));
+
+            NotificationResult result = sendWithCandidates(request, candidates, scope);
+            if (result.success()) {
+                scope.attribute("notifications.selected.provider", result.provider());
+                scope.success(result.id());
+            } else {
+                scope.failure("notification_send_failed", normalizeFailureMessage(result.message()));
+            }
+            return result;
+        } catch (RuntimeException ex) {
+            scope.failure(ex.getClass().getSimpleName(), ex.getMessage());
+            throw ex;
+        } finally {
+            scope.close();
+        }
     }
 
     public CompletableFuture<NotificationResult> sendAsync(NotificationRequest request) {
-        return CompletableFuture.supplyAsync(() -> send(request), executor);
+        Supplier<NotificationResult> task = telemetry.contextualize(() -> send(request));
+        return CompletableFuture.supplyAsync(task, executor);
     }
 
     public List<NotificationResult> sendBatch(Collection<NotificationRequest> requests) {
@@ -99,19 +119,39 @@ public class NotificationService {
         return List.of(resolveSender(channelSenders, channel, activeProvider));
     }
 
-    private NotificationResult sendWithCandidates(NotificationRequest request, List<NotificationSender> candidates) {
+    private NotificationResult sendWithCandidates(
+        NotificationRequest request,
+        List<NotificationSender> candidates,
+        NotificationTelemetryScope scope) {
         List<String> failures = new ArrayList<>();
+        int attempt = 0;
 
         for (NotificationSender sender : candidates) {
+            attempt++;
+            scope.event("notification.provider.attempt", Map.of(
+                "provider", sender.provider(),
+                "attempt", Integer.toString(attempt)));
             try {
                 NotificationResult result = sender.send(request);
                 if (result != null && result.success()) {
+                    scope.event("notification.provider.success", Map.of(
+                        "provider", sender.provider(),
+                        "attempt", Integer.toString(attempt)));
                     return result;
                 }
 
-                failures.add(formatFailure(sender.provider(), result == null ? "respuesta nula" : result.message()));
+                String failureMessage = result == null ? "respuesta nula" : result.message();
+                failures.add(formatFailure(sender.provider(), failureMessage));
+                scope.event("notification.provider.failure", Map.of(
+                    "provider", sender.provider(),
+                    "attempt", Integer.toString(attempt),
+                    "reason", normalizeFailureMessage(failureMessage)));
             } catch (RuntimeException ex) {
                 failures.add(formatFailure(sender.provider(), ex.getMessage()));
+                scope.event("notification.provider.exception", Map.of(
+                    "provider", sender.provider(),
+                    "attempt", Integer.toString(attempt),
+                    "reason", normalizeFailureMessage(ex.getMessage())));
             }
         }
 
@@ -147,5 +187,22 @@ public class NotificationService {
         }
 
         return message.trim();
+    }
+
+    private static NotificationTelemetryObservation observationFor(
+        NotificationRequest request,
+        boolean async,
+        boolean batch,
+        int candidateCount,
+        String provider) {
+
+        return NotificationTelemetryObservation.of(
+            "notifications.send",
+            request == null || request.channel() == null ? "unknown" : request.channel().name(),
+            provider,
+            async,
+            batch,
+            candidateCount,
+            Map.of());
     }
 }

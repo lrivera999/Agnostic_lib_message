@@ -9,12 +9,12 @@ import com.demo.notifications.core.enums.NotificationChannel;
 import com.demo.notifications.core.exceptions.NotificationException;
 import com.demo.notifications.core.interfaces.NotificationSender;
 
-public class TwilioSmsSender implements NotificationSender {
-    private static Logger logger = LoggerFactory.getLogger(TwilioSmsSender.class);
+public final class TwilioSmsSender implements NotificationSender {
+    private static final Logger logger = LoggerFactory.getLogger(TwilioSmsSender.class);
     private final String authToken;
     private final String accountSid;
     private final String fromPhoneNumber;
-    static final String PROVIDER_NAME = "Twilio";
+    private static final String PROVIDER_NAME = "Twilio";
 
     public TwilioSmsSender(String authToken, String accountSid, String fromPhoneNumber) {
         this.authToken = authToken;
@@ -23,10 +23,14 @@ public class TwilioSmsSender implements NotificationSender {
     }
 
     @Override
-    public NotificationChannel channel(){ return NotificationChannel.SMS; }
+    public NotificationChannel channel() {
+        return NotificationChannel.SMS;
+    }
 
     @Override
-    public String provider(){ return PROVIDER_NAME; }
+    public String provider() {
+        return PROVIDER_NAME;
+    }
 
     @Override
     public NotificationResult send(NotificationRequest request) throws NotificationException {
@@ -38,5 +42,4 @@ public class TwilioSmsSender implements NotificationSender {
             request.message());
         return NotificationResult.success(channel(), provider());
     }
-
 }

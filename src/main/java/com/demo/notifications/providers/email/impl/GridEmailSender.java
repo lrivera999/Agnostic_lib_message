@@ -9,13 +9,13 @@ import com.demo.notifications.core.enums.NotificationChannel;
 import com.demo.notifications.core.exceptions.NotificationException;
 import com.demo.notifications.core.interfaces.NotificationSender;
 
-public class GridEmailSender implements NotificationSender {
-private static Logger logger = LoggerFactory.getLogger(GridEmailSender.class);
+public final class GridEmailSender implements NotificationSender {
+    private static final Logger logger = LoggerFactory.getLogger(GridEmailSender.class);
     private final String apiKey;
     private final String domain;
     private final String from;
 
-    static final String PROVIDER_NAME = "SendGrid";
+    private static final String PROVIDER_NAME = "SendGrid";
 
     public GridEmailSender(String apiKey, String domain, String from) {
         this.apiKey = apiKey;
@@ -24,10 +24,14 @@ private static Logger logger = LoggerFactory.getLogger(GridEmailSender.class);
     }
 
     @Override
-    public NotificationChannel channel(){ return NotificationChannel.EMAIL; }
+    public NotificationChannel channel() {
+        return NotificationChannel.EMAIL;
+    }
 
     @Override
-    public String provider(){ return PROVIDER_NAME; }
+    public String provider() {
+        return PROVIDER_NAME;
+    }
 
     @Override
     public NotificationResult send(NotificationRequest request) throws NotificationException {
@@ -40,5 +44,4 @@ private static Logger logger = LoggerFactory.getLogger(GridEmailSender.class);
             request.message());
         return NotificationResult.success(channel(), provider());
     }
-
 }

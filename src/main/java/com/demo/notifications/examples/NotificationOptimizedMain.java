@@ -13,6 +13,7 @@ import com.demo.notifications.providers.email.impl.GridEmailSender;
 import com.demo.notifications.providers.email.impl.MailgunEmailSender;
 import com.demo.notifications.providers.push.impl.FirebasePushSender;
 import com.demo.notifications.providers.sms.impl.TwilioSmsSender;
+import com.demo.notifications.observability.NotificationTelemetryPort;
 import com.demo.notifications.services.NotificationService;
 import com.demo.notifications.services.NotificationServiceBuilder;
 
@@ -67,8 +68,13 @@ public final class NotificationOptimizedMain {
     }
 
     static NotificationService buildService(Executor executor) {
+        return buildService(executor, NotificationTelemetryPort.noop());
+    }
+
+    static NotificationService buildService(Executor executor, NotificationTelemetryPort telemetry) {
         return new NotificationServiceBuilder()
             .executor(executor)
+            .telemetry(telemetry)
             .register(new GridEmailSender(
                 "demo-sendgrid-api-key",
                 "demo.mail.example",

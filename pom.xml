@@ -15,6 +15,7 @@
         <module>notifications-core</module>
         <module>notifications-application</module>
         <module>notifications-adapters</module>
+        <module>notifications-observability-otel</module>
         <module>notifications-demo</module>
     </modules>
 
@@ -24,6 +25,9 @@
         <junit.version>5.10.2</junit.version>
         <mockito.version>5.12.0</mockito.version>
         <log4j.version>2.25.2</log4j.version>
+        <opentelemetry.version>1.51.0</opentelemetry.version>
+        <jacoco.version>0.8.15</jacoco.version>
+        <jacoco.skip>true</jacoco.skip>
     </properties>
 
     <dependencyManagement>
@@ -42,6 +46,11 @@
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-slf4j2-impl</artifactId>
                 <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-api</artifactId>
+                <version>${opentelemetry.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
@@ -63,6 +72,10 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.13.0</version>
+                    <configuration>
+                        <release>${maven.compiler.release}</release>
+                        <proc>none</proc>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -79,7 +92,54 @@
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>3.6.0</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>coverage</id>
+            <properties>
+                <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/notifications-core/target/site/jacoco/jacoco.xml,${maven.multiModuleProjectDirectory}/notifications-application/target/site/jacoco/jacoco.xml,${maven.multiModuleProjectDirectory}/notifications-adapters/target/site/jacoco/jacoco.xml,${maven.multiModuleProjectDirectory}/notifications-observability-otel/target/site/jacoco/jacoco.xml,${maven.multiModuleProjectDirectory}/notifications-demo/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>prepare-agent</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${jacoco.skip}</skip>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>report</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${jacoco.skip}</skip>
+                                    <formats>
+                                        <format>XML</format>
+                                    </formats>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
