@@ -1,0 +1,12 @@
+.git
+.github
+.agents
+.idea
+.vscode
+target
+**/target
+*.iml
+*.log
+README.md
+CHECKLIST_REFACTOR.md
+test

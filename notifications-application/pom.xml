@@ -1,0 +1,68 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.demo</groupId>
+        <artifactId>notifications-parent</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>notifications-application</artifactId>
+    <name>Notifications Application</name>
+    <description>Application services for the notifications library</description>
+
+    <properties>
+        <shared.main.source>${project.parent.basedir}/src/main/java</shared.main.source>
+        <shared.test.source>${project.parent.basedir}/src/test/java</shared.test.source>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.demo</groupId>
+            <artifactId>notifications-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <sourceDirectory>${shared.main.source}</sourceDirectory>
+        <testSourceDirectory>${shared.test.source}</testSourceDirectory>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                    <includes>
+                        <include>com/demo/notifications/services/**</include>
+                        <include>com/demo/notifications/validations/**</include>
+                    </includes>
+                    <testIncludes>
+                        <testInclude>com/demo/notifications/services/**</testInclude>
+                        <testInclude>com/demo/notifications/validations/**</testInclude>
+                    </testIncludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
