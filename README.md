@@ -449,6 +449,8 @@ Si necesitas integraciones productivas, reemplaza esas clases por adaptadores qu
 
 El `Dockerfile` del repositorio construye el modulo `notifications-demo`, activa el perfil `demo-executable` y empaqueta el jar ejecutable en una imagen ligera. El contenedor usa `NotificationOptimizedMain` por defecto, pero puedes cambiar el `MAIN_CLASS` para ejecutar otro flujo, incluido el de observabilidad. No necesitas compilar antes en tu maquina, porque la imagen ya hace el `mvn -pl notifications-demo -am -Pdemo-executable -DskipTests package` internamente.
 
+> Importante: esta imagen ejecuta un comando CLI y no un servicio persistente. Si no le pasas argumentos validos, el `main` imprime la ayuda y el contenedor termina. Eso es esperado.
+
 Construir la imagen:
 
 ```bash
@@ -477,3 +479,9 @@ docker run --rm \
 ```
 
 Nota: esta imagen esta pensada para compartir y ejecutar el demo compilado. Para consumo como dependencia Java, sigue siendo mejor publicar los jars de Maven o instalar el parent multi-modulo en un repositorio interno.
+
+Si quieres abrir una shell dentro de la imagen para inspeccionarla manualmente, puedes sobrescribir el `ENTRYPOINT`:
+
+```bash
+docker run --rm -it --entrypoint sh notifications-demo
+```

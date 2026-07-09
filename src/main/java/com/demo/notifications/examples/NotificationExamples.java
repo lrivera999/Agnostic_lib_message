@@ -20,12 +20,12 @@ public final class NotificationExamples {
 
     static final String USAGE = """
         Uso:
-          java -jar notifications-1.0.0.jar --channel=<email|sms|push> --to=<destinatario> --message=<mensaje> [--subject=<asunto>] [--title=<titulo>]
+          java -jar notifications-demo-1.0.0.jar --channel=<email|sms|push> --to=<destinatario> --message=<mensaje> [--subject=<asunto>] [--title=<titulo>]
 
         Ejemplos:
-          java -jar notifications-1.0.0.jar --channel=email --to=user@example.com --subject=Bienvenido --message="Tu cuenta esta lista."
-          java -jar notifications-1.0.0.jar --channel=sms --to=+573001234567 --message="Tu codigo es 123456."
-          java -jar notifications-1.0.0.jar --channel=push --to=push-token-123456 --title="Nuevo mensaje" --message="Recibiste una notificacion."
+          java -jar notifications-demo-1.0.0.jar --channel=email --to=user@example.com --subject=Bienvenido --message="Tu cuenta esta lista."
+          java -jar notifications-demo-1.0.0.jar --channel=sms --to=+573001234567 --message="Tu codigo es 123456."
+          java -jar notifications-demo-1.0.0.jar --channel=push --to=push-token-123456 --title="Nuevo mensaje" --message="Recibiste una notificacion."
 
         Atajos:
           -c = --channel
