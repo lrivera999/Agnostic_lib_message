@@ -7,9 +7,11 @@ Incluye:
 - `notifications-application` con el servicio central de envio y el builder.
 - `notifications-adapters` con providers de ejemplo por canal.
 - `notifications-observability-otel` con el adaptador OpenTelemetry opcional.
-- `notifications-demo` con las dos variantes de ejecucion:
+- `notifications-demo` con las variantes de ejecucion:
   - `com.demo.notifications.examples.NotificationExamples` para el flujo sin optimizacion.
   - `com.demo.notifications.examples.NotificationOptimizedMain` para el flujo optimizado con virtual threads.
+  - `com.demo.notifications.examples.NotificationMultichannelMain` para el flujo multicanal con EMAIL, SMS y PUSH en una sola ejecucion.
+  - `com.demo.notifications.examples.NotificationResilientMain` para el flujo resiliente con retry, circuit breaker y rate limit.
   - `com.demo.notifications.examples.NotificationObservabilityMain` para el flujo con telemetria conectada.
 
 ## Arquitectura hexagonal
@@ -188,7 +190,7 @@ El artefacto ejecutable queda en:
 notifications-demo/target/notifications-demo-1.0.0.jar
 ```
 
-Ese mismo jar contiene los tres ejemplos de ejecucion. Usa `java -jar` para el flujo optimizado por defecto y `java -cp ... <MainClass>` cuando quieras elegir otro `main` de forma explicita.
+Ese mismo jar contiene los cuatro ejemplos de ejecucion. Usa `java -jar` para el flujo optimizado por defecto y `java -cp ... <MainClass>` cuando quieras elegir otro `main` de forma explicita.
 
 Ejemplo con observabilidad:
 
@@ -270,6 +272,7 @@ import com.demo.notifications.core.NotificationRequest;
 import com.demo.notifications.core.NotificationResult;
 import com.demo.notifications.core.enums.NotificationChannel;
 import com.demo.notifications.providers.email.impl.GridEmailSender;
+import com.demo.notifications.providers.email.impl.GmailEmailSender;
 import com.demo.notifications.providers.email.impl.MailgunEmailSender;
 import com.demo.notifications.providers.push.impl.FirebasePushSender;
 import com.demo.notifications.providers.sms.impl.TwilioSmsSender;
@@ -283,6 +286,10 @@ NotificationService service = new NotificationServiceBuilder()
         "demo-sendgrid-api-key",
         "demo.mail.example",
         "noreply@demo.mail.example"))
+    .register(new GmailEmailSender(
+        "demo-gmail-username",
+        "demo-gmail-app-password",
+        "noreply@demo.mail.example"))
     .register(new MailgunEmailSender(
         "demo-mailgun-api-key",
         "demo.mail.example",
@@ -295,7 +302,7 @@ NotificationService service = new NotificationServiceBuilder()
         "demo-firebase-api-key",
         "demo-project",
         "service-account.json"))
-    .activeProvider(NotificationChannel.EMAIL, "SendGrid")
+    .fallbackProviders(NotificationChannel.EMAIL, "SendGrid", "Gmail", "Mailgun")
     .build();
 ```
 
@@ -329,9 +336,9 @@ try (var executor = java.util.concurrent.Executors.newVirtualThreadPerTaskExecut
 > Nota: si no llamas a `telemetry(...)`, la libreria usa un `Noop` por defecto y se comporta igual que antes.
 
 > Nota: si registras mas de un provider para el mismo canal, puedes definir el provider activo con `activeProvider(...)` o una cadena de fallback con `fallbackProviders(...)`. Si solo registras uno, se usa automaticamente.
-> Nota: el modulo `notifications-demo` genera el jar ejecutable cuando activas el perfil `demo-executable`.
+> Nota: el modulo `notifications-demo` genera el jar ejecutable por defecto; el perfil `demo-executable` se mantiene por compatibilidad con scripts y Docker.
 
-Los comandos de ejecucion de abajo asumen que ya generaste ese jar con el perfil indicado.
+Los comandos de ejecucion de abajo asumen que ya generaste ese jar ejecutable.
 
 ## 3. Variante sin optimizacion
 
@@ -345,7 +352,7 @@ java -cp notifications-demo/target/notifications-demo-1.0.0.jar com.demo.notific
 
 ## 4. Variante optimizada con virtual threads
 
-La clase `NotificationOptimizedMain` crea un `ExecutorService` con `Executors.newVirtualThreadPerTaskExecutor()` y ademas configura una cadena de fallback para `EMAIL`.
+La clase `NotificationOptimizedMain` crea un `ExecutorService` con `Executors.newVirtualThreadPerTaskExecutor()` y ademas configura una cadena de fallback para `EMAIL` que incluye `Gmail`.
 
 En esta variante:
 - Cada peticion corre en un virtual thread independiente.
@@ -358,12 +365,49 @@ try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
         .executor(executor)
         .register(...)
         .register(...)
-        .fallbackProviders(NotificationChannel.EMAIL, "SendGrid", "Mailgun")
+        .fallbackProviders(NotificationChannel.EMAIL, "SendGrid", "Gmail", "Mailgun")
         .build();
 
     NotificationResult result = service.sendAsync(request).join();
 }
 ```
+
+### Variante multicanal
+
+`NotificationMultichannelMain` envia una notificacion por cada canal soportado en una sola ejecucion: `EMAIL`, `SMS` y `PUSH`.
+
+```bash
+java -cp notifications-demo/target/notifications-demo-1.0.0.jar com.demo.notifications.examples.NotificationMultichannelMain
+```
+
+Salida esperada:
+
+```text
+[multicanal] enviando 3 notificaciones en paralelo
+NotificationResult[... channel=EMAIL ... provider=SendGrid ...]
+NotificationResult[... channel=SMS ... provider=Twilio ...]
+NotificationResult[... channel=PUSH ... provider=Firebase ...]
+```
+
+### Variante resiliente con failover, retry y circuit breaker
+
+`NotificationResilientMain` usa un pool explicito de hilos de plataforma y aplica `retry`, `circuit breaker` y `rate limit` por proveedor para `EMAIL`, incluyendo el provider de ejemplo `Gmail`.
+Si quieres ver en consola el flujo de `retry` y `fallback`, agrega el flag `--demo-failover` para forzar el fallo del proveedor primario `SendGrid`.
+Si quieres ver el `circuit breaker` abierto, usa `--demo-circuit-breaker`; el demo hara dos envios seguidos para que veas el evento `notification.provider.circuit_open`.
+
+```bash
+java -cp notifications-demo/target/notifications-demo-1.0.0.jar com.demo.notifications.examples.NotificationResilientMain --channel=email --to=user@example.com --subject=Bienvenido --message="Tu cuenta esta lista." --demo-failover
+```
+
+La salida mostrara eventos como `notification.provider.retry` y `notification.provider.failover` antes del `NotificationResult` final, que deberia resolver en `provider=Gmail`.
+
+Para ver el breaker abierto:
+
+```bash
+java -cp notifications-demo/target/notifications-demo-1.0.0.jar com.demo.notifications.examples.NotificationResilientMain --channel=email --to=user@example.com --subject=Bienvenido --message="Tu cuenta esta lista." --demo-circuit-breaker
+```
+
+En esa variante veras primero un `notification.provider.circuit_tripped` y luego un `notification.provider.circuit_open` en el segundo envio.
 
 ### Flujo
 ```mermaid
@@ -437,6 +481,7 @@ java -jar notifications-demo/target/notifications-demo-1.0.0.jar --channel=push 
 - El provider activo se define por configuracion en el builder con `activeProvider(...)`.
 - Si un canal tiene varios providers y no se selecciona uno activo ni una politica de fallback, la construccion del servicio falla para evitar ambiguedad.
 - Si defines `fallbackProviders(...)`, la libreria intenta los providers en el orden configurado hasta que uno responde con exito.
+- `resilience(...)` aplica retry, circuit breaker, rate limit y timeout por provider, sin cambiar el contrato de `NotificationSender`.
 - `sendAsync(...)` y `sendBatchAsync(...)` propagan el contexto a traves del puerto de telemetria para que el adaptador OTel pueda enlazar spans entre hilos y virtual threads.
 
 ## 7. Estado actual de los sender examples
@@ -447,7 +492,7 @@ Si necesitas integraciones productivas, reemplaza esas clases por adaptadores qu
 
 ## 8. Uso con Docker
 
-El `Dockerfile` del repositorio construye el modulo `notifications-demo`, activa el perfil `demo-executable` y empaqueta el jar ejecutable en una imagen ligera. El contenedor usa `NotificationOptimizedMain` por defecto, pero puedes cambiar el `MAIN_CLASS` para ejecutar otro flujo, incluido el de observabilidad. No necesitas compilar antes en tu maquina, porque la imagen ya hace el `mvn -pl notifications-demo -am -Pdemo-executable -DskipTests package` internamente.
+El `Dockerfile` del repositorio construye el modulo `notifications-demo`, activa el perfil `demo-executable` y empaqueta el jar ejecutable en una imagen ligera. El contenedor usa `NotificationOptimizedMain` por defecto, pero puedes cambiar el `MAIN_CLASS` para ejecutar otro flujo, incluido el de observabilidad o el resiliente. No necesitas compilar antes en tu maquina, porque la imagen ya hace el `mvn -pl notifications-demo -am -Pdemo-executable -DskipTests package` internamente.
 
 > Importante: esta imagen ejecuta un comando CLI y no un servicio persistente. Si no le pasas argumentos validos, el `main` imprime la ayuda y el contenedor termina. Eso es esperado.
 

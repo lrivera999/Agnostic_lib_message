@@ -25,6 +25,10 @@ public final class MessageChannel {
    public static final String MSG_PROVIDER_FALLBACK_DUPLICATED = "La politica de fallback contiene providers duplicados \t";
    public static final String MSG_PROVIDER_FALLBACK_INCOMPLETE = "La politica de fallback debe incluir exactamente los proveedores registrados para el canal \t";
    public static final String MSG_PROVIDER_POLICY_CONFLICT = "No se puede combinar proveedor activo y politica de fallback para el mismo canal \t";
+   public static final String MSG_PROVIDER_CIRCUIT_OPEN = "El circuit breaker del proveedor esta abierto \t";
+   public static final String MSG_PROVIDER_RATE_LIMITED = "El proveedor excedio el limite de tasa \t";
+   public static final String MSG_PROVIDER_RETRY_EXHAUSTED = "Se agotaron los reintentos del proveedor \t";
+   public static final String MSG_PROVIDER_TIMEOUT = "El proveedor excedio el tiempo maximo de respuesta \t";
    public static final String MSG_INVALID_PUSH_TOKEN = "El token de notificación push proporcionado no es válido \t";
    public static final String MSG_SENDER_REGISTRED = "Al menos uno de los remitentes debe estar registrado \t";
    public static final String MSG_EXECUTOR_REGISTRED = "El ejecutor no puede ser vacío, nulo o al menos debe estar registrado \t";

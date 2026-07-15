@@ -10,6 +10,7 @@ import com.demo.notifications.core.NotificationRequest;
 import com.demo.notifications.core.NotificationResult;
 import com.demo.notifications.core.enums.NotificationChannel;
 import com.demo.notifications.providers.email.impl.GridEmailSender;
+import com.demo.notifications.providers.email.impl.GmailEmailSender;
 import com.demo.notifications.providers.email.impl.MailgunEmailSender;
 import com.demo.notifications.providers.push.impl.FirebasePushSender;
 import com.demo.notifications.providers.sms.impl.TwilioSmsSender;
@@ -79,6 +80,10 @@ public final class NotificationOptimizedMain {
                 "demo-sendgrid-api-key",
                 "demo.mail.example",
                 "noreply@demo.mail.example"))
+            .register(new GmailEmailSender(
+                "demo-gmail-username",
+                "demo-gmail-app-password",
+                "noreply@demo.mail.example"))
             .register(new MailgunEmailSender(
                 "demo-mailgun-api-key",
                 "demo.mail.example",
@@ -91,7 +96,7 @@ public final class NotificationOptimizedMain {
                 "demo-firebase-api-key",
                 "demo-project",
                 "service-account.json"))
-            .fallbackProviders(NotificationChannel.EMAIL, "SendGrid", "Mailgun")
+            .fallbackProviders(NotificationChannel.EMAIL, "SendGrid", "Gmail", "Mailgun")
             .build();
     }
 }

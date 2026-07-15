@@ -9,6 +9,7 @@ import com.demo.notifications.core.NotificationRequest;
 import com.demo.notifications.core.NotificationResult;
 import com.demo.notifications.core.enums.NotificationChannel;
 import com.demo.notifications.providers.email.impl.GridEmailSender;
+import com.demo.notifications.providers.email.impl.GmailEmailSender;
 import com.demo.notifications.providers.email.impl.MailgunEmailSender;
 import com.demo.notifications.providers.push.impl.FirebasePushSender;
 import com.demo.notifications.providers.sms.impl.TwilioSmsSender;
@@ -29,6 +30,14 @@ class NotificationSenderImplementationsTest {
             .send(NotificationRequest.email("user@example.com", "Bienvenido", "Hola"));
 
         assertSenderResult(result, NotificationChannel.EMAIL, "Mailgun");
+    }
+
+    @Test
+    void gmailEmailSenderReturnsSuccessResult() {
+        NotificationResult result = new GmailEmailSender("username", "app-password", "noreply@demo.example")
+            .send(NotificationRequest.email("user@example.com", "Bienvenido", "Hola"));
+
+        assertSenderResult(result, NotificationChannel.EMAIL, "Gmail");
     }
 
     @Test

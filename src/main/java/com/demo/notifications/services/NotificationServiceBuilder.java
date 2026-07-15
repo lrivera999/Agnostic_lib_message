@@ -18,10 +18,13 @@ import com.demo.notifications.observability.NotificationTelemetryPort;
 
 public final class NotificationServiceBuilder {
     private static final String MSG_TELEMETRY_NULL = "La telemetria proporcionada no puede ser nula \t";
+    private static final String MSG_RESILIENCE_NULL = "La politica de resiliencia proporcionada no puede ser nula \t";
 
     private final Map<NotificationChannel, LinkedHashMap<String, NotificationSender>> senders = new EnumMap<>(NotificationChannel.class);
     private final Map<NotificationChannel, String> activeProviders = new EnumMap<>(NotificationChannel.class);
     private final Map<NotificationChannel, List<String>> fallbackProviders = new EnumMap<>(NotificationChannel.class);
+    private final Map<NotificationChannel, LinkedHashMap<String, NotificationResiliencePolicy>> resiliencePolicies =
+        new EnumMap<>(NotificationChannel.class);
     private NotificationTelemetryPort telemetry = NotificationTelemetryPort.noop();
 
     private Executor executor = Executors.newVirtualThreadPerTaskExecutor();
@@ -89,6 +92,27 @@ public final class NotificationServiceBuilder {
         return this;
     }
 
+    public NotificationServiceBuilder resilience(
+        NotificationChannel channel,
+        String provider,
+        NotificationResiliencePolicy policy) {
+
+        if (channel == null) {
+            throw new NotificationException(MessageChannel.MSG_CHANNEL_NOT_BLANK);
+        }
+        if (provider == null || provider.isBlank()) {
+            throw new NotificationException(MessageChannel.MSG_PROVIDER_NOT_BLANK);
+        }
+        if (policy == null) {
+            throw new NotificationException(MSG_RESILIENCE_NULL);
+        }
+
+        resiliencePolicies
+            .computeIfAbsent(channel, ignored -> new LinkedHashMap<>())
+            .put(normalizeProviderKey(provider), policy);
+        return this;
+    }
+
     public NotificationServiceBuilder executor(Executor executor) {
         if (executor == null) {
             throw new NotificationException(MessageChannel.MSG_EXECUTOR_REGISTRED);
@@ -111,16 +135,24 @@ public final class NotificationServiceBuilder {
         }
 
         validateProviderPolicies();
+        validateResiliencePolicies();
 
         Map<NotificationChannel, Map<String, NotificationSender>> immutableSenders = new EnumMap<>(NotificationChannel.class);
         for (Map.Entry<NotificationChannel, LinkedHashMap<String, NotificationSender>> entry : senders.entrySet()) {
             immutableSenders.put(entry.getKey(), Map.copyOf(entry.getValue()));
         }
 
+        Map<NotificationChannel, Map<String, NotificationResiliencePolicy>> immutableResiliencePolicies =
+            new EnumMap<>(NotificationChannel.class);
+        for (Map.Entry<NotificationChannel, LinkedHashMap<String, NotificationResiliencePolicy>> entry : resiliencePolicies.entrySet()) {
+            immutableResiliencePolicies.put(entry.getKey(), Map.copyOf(entry.getValue()));
+        }
+
         return new NotificationService(
             immutableSenders,
             new HashMap<>(activeProviders),
             new HashMap<>(fallbackProviders),
+            immutableResiliencePolicies,
             executor,
             telemetry);
     }
@@ -175,6 +207,24 @@ public final class NotificationServiceBuilder {
         }
     }
 
+    private void validateResiliencePolicies() {
+        for (Map.Entry<NotificationChannel, LinkedHashMap<String, NotificationResiliencePolicy>> entry : resiliencePolicies.entrySet()) {
+            NotificationChannel channel = entry.getKey();
+            LinkedHashMap<String, NotificationSender> channelSenders = senders.get(channel);
+            if (channelSenders == null || channelSenders.isEmpty()) {
+                throw new NotificationException(
+                    MessageChannel.MSG_PROVIDER_NOT_REGISTERED + entry.getValue().keySet().iterator().next() + ": " + channel);
+            }
+
+            for (String provider : entry.getValue().keySet()) {
+                if (!containsProvider(channelSenders, provider)) {
+                    throw new NotificationException(
+                        MessageChannel.MSG_PROVIDER_NOT_REGISTERED + provider + ": " + channel);
+                }
+            }
+        }
+    }
+
     private void validateFallbackChain(
         NotificationChannel channel,
         LinkedHashMap<String, NotificationSender> channelSenders,
@@ -205,5 +255,9 @@ public final class NotificationServiceBuilder {
 
     private static String normalizeProviderName(String provider) {
         return Objects.requireNonNull(provider).trim();
+    }
+
+    private static String normalizeProviderKey(String provider) {
+        return normalizeProviderName(provider).toLowerCase(java.util.Locale.ROOT);
     }
 }
